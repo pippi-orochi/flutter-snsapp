@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 void main() async {
@@ -295,7 +297,7 @@ class _AddPostPageState extends State<AddPostPage> {
         ),
         body: Center(
           child: Container(
-            padding: EdgeInsets.all(32),
+            padding: EdgeInsets.all(1),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
