@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 void main() async {
   // 初期化処理を追加
@@ -260,58 +262,103 @@ class _AddPostPageState extends State<AddPostPage> {
   // 入力した投稿メッセージ
   String messageText = '';
 
+  XFile? _image;
+  final imagePicker = ImagePicker();
+  // カメラから画像を取得するメソッド
+  Future getImageFromCamera() async {
+    final pickedFile = await imagePicker.pickImage(source: ImageSource.camera);
+    setState(() {
+      if (pickedFile != null) {
+        _image = XFile(pickedFile.path);
+      }
+    });
+  }
+
+  // ギャラリーから画像を取得するメソッド
+  Future getImageFromGarally() async {
+    final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery);
+    print(pickedFile);
+    // Image.network(pickedFile!.path);
+    setState(() {
+      if (pickedFile != null) {
+        _image = XFile(pickedFile.path);
+        print(_image);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('チャット投稿'),
-      ),
-      body: Center(
-        child: Container(
-          padding: EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // 投稿メッセージ入力
-              TextFormField(
-                decoration: InputDecoration(labelText: '投稿メッセージ'),
-                // 複数行のテキスト入力
-                keyboardType: TextInputType.multiline,
-                // 最大3行
-                maxLines: 3,
-                onChanged: (String value) {
-                  setState(() {
-                    messageText = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  child: Text('投稿'),
-                  onPressed: () async {
-                    final date =
-                        DateTime.now().toLocal().toIso8601String(); // 現在の日時
-                    final email = widget.user.email; // AddPostPage のデータを参照
-                    // 投稿メッセージ用ドキュメント作成
-                    await FirebaseFirestore.instance
-                        .collection('posts') // コレクションID指定
-                        .doc() // ドキュメントID自動生成
-                        .set({
-                      'text': messageText,
-                      'email': email,
-                      'date': date
+        appBar: AppBar(
+          title: Text('チャット投稿'),
+        ),
+        body: Center(
+          child: Container(
+            padding: EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                // 投稿メッセージ入力
+                TextFormField(
+                  decoration: InputDecoration(labelText: '投稿メッセージ'),
+                  // 複数行のテキスト入力
+                  keyboardType: TextInputType.multiline,
+                  // 最大3行
+                  maxLines: 3,
+                  onChanged: (String value) {
+                    setState(() {
+                      messageText = value;
                     });
-                    // 1つ前の画面に戻る
-                    Navigator.of(context).pop();
                   },
                 ),
-              )
-            ],
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    child: Text('投稿'),
+                    onPressed: () async {
+                      final date =
+                          DateTime.now().toLocal().toIso8601String(); // 現在の日時
+                      final email = widget.user.email; // AddPostPage のデータを参照
+                      // 投稿メッセージ用ドキュメント作成
+                      await FirebaseFirestore.instance
+                          .collection('posts') // コレクションID指定
+                          .doc() // ドキュメントID自動生成
+                          .set({
+                        'text': messageText,
+                        'email': email,
+                        'date': date
+                      });
+                      // 1つ前の画面に戻る
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ),
+                Container(
+                  width: double.infinity,
+                  child: _image == null
+                      ? Text(
+                          '写真を選択してください',
+                          // ignore: deprecated_member_use
+                          style: Theme.of(context).textTheme.headline4,
+                        )
+                      : Image.network(_image!.path),
+                )
+              ],
+            ),
           ),
         ),
-      ),
-    );
+        floatingActionButton:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          // カメラから取得するボタン
+          FloatingActionButton(
+              onPressed: getImageFromCamera,
+              child: const Icon(Icons.photo_camera)),
+          // ギャラリーから取得するボタン
+          FloatingActionButton(
+              onPressed: getImageFromGarally,
+              child: const Icon(Icons.photo_album))
+        ]));
   }
 }
