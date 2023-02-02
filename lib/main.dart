@@ -1,5 +1,7 @@
 // ignore: unused_import
 // ignore_for_file: unused_import
+import 'dart:convert';
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -8,6 +10,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() async {
   // 初期化処理を追加
@@ -18,6 +22,7 @@ void main() async {
       appId: "1:194151201355:web:449fe229653d2198146bce",
       messagingSenderId: "194151201355",
       projectId: "fir-demo-83f89",
+      storageBucket: "gs://fir-demo-83f89.appspot.com",
     ),
   );
   runApp(ChatApp());
@@ -263,6 +268,7 @@ class AddPostPage extends StatefulWidget {
 class _AddPostPageState extends State<AddPostPage> {
   // 入力した投稿メッセージ
   String messageText = '';
+  String url = '';
 
   XFile? _image;
   final imagePicker = ImagePicker();
@@ -278,12 +284,21 @@ class _AddPostPageState extends State<AddPostPage> {
 
   // ギャラリーから画像を取得するメソッド
   Future getImageFromGarally() async {
-    final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery);
-    print(pickedFile);
+    final pickerFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    var bytes = await pickerFile?.readAsBytes();
+    File file = File(pickerFile!.path);
+    FirebaseStorage storage = FirebaseStorage.instance;
+    final storedImage = await storage.ref("UL/upload-pic.png").putData(bytes!);
+    var dowurl = await storedImage.ref.getDownloadURL();
+    var url = dowurl.toString();
+
+    // print(pickedFile);
     // Image.network(pickedFile!.path);
     setState(() {
-      if (pickedFile != null) {
-        _image = XFile(pickedFile.path);
+      if (pickerFile != null) {
+        _image = XFile(pickerFile.path);
+        url = dowurl.toString();
         print(_image);
       }
     });
@@ -320,6 +335,16 @@ class _AddPostPageState extends State<AddPostPage> {
                   child: ElevatedButton(
                     child: Text('投稿'),
                     onPressed: () async {
+                      final pickerFile = await ImagePicker()
+                          .pickImage(source: ImageSource.gallery);
+                      var bytes = await pickerFile?.readAsBytes();
+                      File file = File(pickerFile!.path);
+                      FirebaseStorage storage = FirebaseStorage.instance;
+                      final storedImage = await storage
+                          .ref("UL/upload-pic.png")
+                          .putData(bytes!);
+                      var dowurl = await storedImage.ref.getDownloadURL();
+                      var url = dowurl.toString();
                       final date =
                           DateTime.now().toLocal().toIso8601String(); // 現在の日時
                       final email = widget.user.email; // AddPostPage のデータを参照
@@ -330,7 +355,8 @@ class _AddPostPageState extends State<AddPostPage> {
                           .set({
                         'text': messageText,
                         'email': email,
-                        'date': date
+                        'date': date,
+                        'imageUrl': url
                       });
                       // 1つ前の画面に戻る
                       Navigator.of(context).pop();
@@ -360,7 +386,7 @@ class _AddPostPageState extends State<AddPostPage> {
           // ギャラリーから取得するボタン
           FloatingActionButton(
               onPressed: getImageFromGarally,
-              child: const Icon(Icons.photo_album))
+              child: const Icon(Icons.photo_camera)),
         ]));
   }
 }
