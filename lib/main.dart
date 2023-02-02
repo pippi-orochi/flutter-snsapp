@@ -1,13 +1,21 @@
 // ignore: unused_import
 // ignore_for_file: unused_import
+import 'dart:convert';
+
+import 'dart:ui';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
+// ignore: unnecessary_import
 import 'package:flutter/foundation.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 void main() async {
   // 初期化処理を追加
@@ -18,349 +26,113 @@ void main() async {
       appId: "1:194151201355:web:449fe229653d2198146bce",
       messagingSenderId: "194151201355",
       projectId: "fir-demo-83f89",
+      storageBucket: "gs://fir-demo-83f89.appspot.com",
     ),
   );
-  runApp(ChatApp());
+  runApp(const MyApp());
 }
 
-class ChatApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    // 3.タイトルとテーマを設定する。画面の本体はMyHomePageで作る。
     return MaterialApp(
-      // アプリ名
-      title: 'ChatApp',
+      title: "Web: ${UniversalPlatform.isWeb} \n ",
       theme: ThemeData(
-        // テーマカラー
         primarySwatch: Colors.blue,
       ),
-      // ログイン画面を表示
-      home: LoginPage(),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-// ログイン画面用Widget
-class LoginPage extends StatefulWidget {
-  @override
-  _LoginPageState createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  // メッセージ表示用
-  String infoText = '';
-  // 入力したメールアドレス・パスワード
-  String email = '';
-  String password = '';
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+  final String title;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Container(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // メールアドレス入力
-              TextFormField(
-                decoration: InputDecoration(labelText: 'メールアドレス'),
-                onChanged: (String value) {
-                  setState(() {
-                    email = value;
-                  });
-                },
-              ),
-              // パスワード入力
-              TextFormField(
-                decoration: InputDecoration(labelText: 'パスワード'),
-                obscureText: true,
-                onChanged: (String value) {
-                  setState(() {
-                    password = value;
-                  });
-                },
-              ),
-              Container(
-                padding: EdgeInsets.all(8),
-                // メッセージ表示
-                child: Text(infoText),
-              ),
-              Container(
-                width: double.infinity,
-                // ユーザー登録ボタン
-                child: ElevatedButton(
-                  child: Text('ユーザー登録'),
-                  onPressed: () async {
-                    try {
-                      // メール/パスワードでユーザー登録
-                      final FirebaseAuth auth = FirebaseAuth.instance;
-                      final result = await auth.createUserWithEmailAndPassword(
-                        email: email,
-                        password: password,
-                      );
-                      // ユーザー登録に成功した場合
-                      // チャット画面に遷移＋ログイン画面を破棄
-                      await Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) {
-                          return ChatPage(result.user!);
-                        }),
-                      );
-                    } catch (e) {
-                      // ユーザー登録に失敗した場合
-                      setState(() {
-                        infoText = "登録に失敗しました：${e.toString()}";
-                      });
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                // ログイン登録ボタン
-                child: OutlinedButton(
-                  child: Text('ログイン'),
-                  onPressed: () async {
-                    try {
-                      // メール/パスワードでログイン
-                      final FirebaseAuth auth = FirebaseAuth.instance;
-                      final result = await auth.signInWithEmailAndPassword(
-                        email: email,
-                        password: password,
-                      );
-                      // ログインに成功した場合
-                      // チャット画面に遷移＋ログイン画面を破棄
-                      await Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) {
-                          return ChatPage(result.user!);
-                        }),
-                      );
-                    } catch (e) {
-                      // ログインに失敗した場合
-                      setState(() {
-                        infoText = "ログインに失敗しました：${e.toString()}";
-                      });
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-// チャット画面用Widget
-class ChatPage extends StatelessWidget {
-  // 引数からユーザー情報を受け取れるようにする
-  ChatPage(this.user);
-  // ユーザー情報
-  final User user;
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('チャット'),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () async {
-              // ログアウト処理
-              // 内部で保持しているログイン情報等が初期化される
-              // （現時点ではログアウト時はこの処理を呼び出せばOKと、思うぐらいで大丈夫です）
-              await FirebaseAuth.instance.signOut();
-              // ログイン画面に遷移＋チャット画面を破棄
-              await Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) {
-                  return LoginPage();
-                }),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            child: Text('ログイン情報：${user.email}'),
-          ),
-          Expanded(
-            // FutureBuilder
-            // 非同期処理の結果を元にWidgetを作れる
-            child: StreamBuilder<QuerySnapshot>(
-              // 投稿メッセージ一覧を取得（非同期処理）
-              // 投稿日時でソート
-              stream: FirebaseFirestore.instance
-                  .collection('posts')
-                  .orderBy('date')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                // データが取得できた場合
-                if (snapshot.hasData) {
-                  final List<DocumentSnapshot> documents = snapshot.data!.docs;
-                  // 取得した投稿メッセージ一覧を元にリスト表示
-                  return ListView(
-                    children: documents.map((document) {
-                      return Card(
-                        child: ListTile(
-                          title: Text(document['text']),
-                          subtitle: Text(document['email']),
-                          // 自分の投稿メッセージの場合は削除ボタンを表示
-                          trailing: document['email'] == user.email
-                              ? IconButton(
-                                  icon: Icon(Icons.delete),
-                                  onPressed: () async {
-                                    // 投稿メッセージのドキュメントを削除
-                                    await FirebaseFirestore.instance
-                                        .collection('posts')
-                                        .doc(document.id)
-                                        .delete();
-                                  },
-                                )
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  );
-                }
-                // データが読込中の場合
-                return Center(
-                  child: Text('読込中...'),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: () async {
-          // 投稿画面に遷移
-          await Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) {
-              return AddPostPage(user);
-            }),
-          );
-        },
-      ),
-    );
-  }
-}
+class _MyHomePageState extends State<MyHomePage> {
+  Image? _img;
+  Text? _text;
 
-// 投稿画面用Widget
-class AddPostPage extends StatefulWidget {
-  // 引数からユーザー情報を受け取る
-  AddPostPage(this.user);
-  // ユーザー情報
-  final User user;
-  @override
-  _AddPostPageState createState() => _AddPostPageState();
-}
+  // ダウンロード処理
+  Future<void> _download() async {
+    // ファイルのダウンロード
+    FirebaseStorage storage = FirebaseStorage.instance;
+    Reference imageRef = storage.ref().child("DL").child("flutter.png");
+    String imageUrl = await imageRef.getDownloadURL();
+    Reference textRef = storage.ref("DL/hello.txt");
+    var data = await textRef.getData();
 
-class _AddPostPageState extends State<AddPostPage> {
-  // 入力した投稿メッセージ
-  String messageText = '';
-
-  XFile? _image;
-  final imagePicker = ImagePicker();
-  // カメラから画像を取得するメソッド
-  Future getImageFromCamera() async {
-    final pickedFile = await imagePicker.pickImage(source: ImageSource.camera);
+    // 画面に反映
     setState(() {
-      if (pickedFile != null) {
-        _image = XFile(pickedFile.path);
-      }
+      _img = Image.network(imageUrl);
+      _text = Text(ascii.decode(data!));
     });
+
+    // ローカルにもファイルを書き込み
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    File downloadToFile = File("${appDocDir.path}/download-logo.png");
+    try {
+      await imageRef.writeToFile(downloadToFile);
+    } catch (e) {
+      print(e);
+    }
   }
 
-  // ギャラリーから画像を取得するメソッド
-  Future getImageFromGarally() async {
-    final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery);
-    print(pickedFile);
-    // Image.network(pickedFile!.path);
-    setState(() {
-      if (pickedFile != null) {
-        _image = XFile(pickedFile.path);
-        print(_image);
-      }
-    });
+  // アップロード処理
+  void _upload() async {
+    // imagePickerで画像を選択する
+    final pickerFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    var bytes = await pickerFile?.readAsBytes();
+    if (pickerFile == null) {
+      return;
+    }
+    File file = File(pickerFile.path);
+    FirebaseStorage storage = FirebaseStorage.instance;
+    try {
+      await storage.ref("UL/upload-pic.png").putData(bytes!);
+      setState(() {
+        _img = null;
+        _text = const Text("UploadDone");
+      });
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('チャット投稿'),
+          title: Text(widget.title),
         ),
         body: Center(
-          child: Container(
-            padding: EdgeInsets.all(1),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                // 投稿メッセージ入力
-                TextFormField(
-                  decoration: InputDecoration(labelText: '投稿メッセージ'),
-                  // 複数行のテキスト入力
-                  keyboardType: TextInputType.multiline,
-                  // 最大3行
-                  maxLines: 3,
-                  onChanged: (String value) {
-                    setState(() {
-                      messageText = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    child: Text('投稿'),
-                    onPressed: () async {
-                      final date =
-                          DateTime.now().toLocal().toIso8601String(); // 現在の日時
-                      final email = widget.user.email; // AddPostPage のデータを参照
-                      // 投稿メッセージ用ドキュメント作成
-                      await FirebaseFirestore.instance
-                          .collection('posts') // コレクションID指定
-                          .doc() // ドキュメントID自動生成
-                          .set({
-                        'text': messageText,
-                        'email': email,
-                        'date': date
-                      });
-                      // 1つ前の画面に戻る
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  child: _image == null
-                      ? Text(
-                          '写真を選択してください',
-                          // ignore: deprecated_member_use
-                          style: Theme.of(context).textTheme.headline4,
-                        )
-                      : Image.network(_image!.path),
-                )
-              ],
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            // ダウンロードしたイメージとテキストを表示
+            children: <Widget>[
+              if (_img != null) _img!,
+              if (_text != null) _text!,
+            ],
           ),
         ),
         floatingActionButton:
             Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          // カメラから取得するボタン
           FloatingActionButton(
-              onPressed: getImageFromCamera,
-              child: const Icon(Icons.photo_camera)),
-          // ギャラリーから取得するボタン
+            onPressed: _download,
+            child: const Icon(Icons.download_outlined),
+          ),
           FloatingActionButton(
-              onPressed: getImageFromGarally,
-              child: const Icon(Icons.photo_album))
+            onPressed: _upload,
+            child: const Icon(Icons.upload_outlined),
+          ),
         ]));
   }
 }
