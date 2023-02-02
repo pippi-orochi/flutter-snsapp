@@ -98,6 +98,17 @@ class _MyHomePageState extends State<MyHomePage> {
     FirebaseStorage storage = FirebaseStorage.instance;
     try {
       await storage.ref("UL/upload-pic.png").putData(bytes!);
+
+      final storedImage =
+          await storage.ref("UL/upload-pic.png").putData(bytes!);
+
+      print(storedImage);
+      print("AAAAAAAAAA");
+
+      var dowurl = await storedImage.ref.getDownloadURL();
+      var url = dowurl.toString();
+      print(url);
+
       setState(() {
         _img = null;
         _text = const Text("UploadDone");
