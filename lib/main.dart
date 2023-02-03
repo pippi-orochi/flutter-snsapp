@@ -1,5 +1,5 @@
 // ignore: unused_import
-// ignore_for_file: unused_import
+// ignore_for_file: unused_import, depend_on_referenced_packages
 import 'dart:convert';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
 
 void main() async {
   // 初期化処理を追加
@@ -212,6 +213,7 @@ class ChatPage extends StatelessWidget {
                       return Card(
                         child: ListTile(
                           title: Text(document['text']),
+                          leading: Image.network(document['imageUrl']),
                           subtitle: Text(document['email']),
                           // 自分の投稿メッセージの場合は削除ボタンを表示
                           trailing: document['email'] == user.email
@@ -289,18 +291,15 @@ class _AddPostPageState extends State<AddPostPage> {
     var bytes = await pickerFile?.readAsBytes();
     File file = File(pickerFile!.path);
     FirebaseStorage storage = FirebaseStorage.instance;
-    final storedImage = await storage.ref("UL/upload-pic.png").putData(bytes!);
+    var fileName = basename(file.path);
+    final storedImage = await storage.ref("UL/$fileName").putData(bytes!);
     var dowurl = await storedImage.ref.getDownloadURL();
-    var url = dowurl.toString();
+    var value = dowurl.toString();
 
     // print(pickedFile);
     // Image.network(pickedFile!.path);
     setState(() {
-      if (pickerFile != null) {
-        _image = XFile(pickerFile.path);
-        url = dowurl.toString();
-        print(_image);
-      }
+      url = value;
     });
   }
 
@@ -335,16 +334,6 @@ class _AddPostPageState extends State<AddPostPage> {
                   child: ElevatedButton(
                     child: Text('投稿'),
                     onPressed: () async {
-                      final pickerFile = await ImagePicker()
-                          .pickImage(source: ImageSource.gallery);
-                      var bytes = await pickerFile?.readAsBytes();
-                      File file = File(pickerFile!.path);
-                      FirebaseStorage storage = FirebaseStorage.instance;
-                      final storedImage = await storage
-                          .ref("UL/upload-pic.png")
-                          .putData(bytes!);
-                      var dowurl = await storedImage.ref.getDownloadURL();
-                      var url = dowurl.toString();
                       final date =
                           DateTime.now().toLocal().toIso8601String(); // 現在の日時
                       final email = widget.user.email; // AddPostPage のデータを参照
