@@ -1,6 +1,11 @@
 # helloworld2
 
-A new Flutter project.
+・footer作成（4つ）
+・FollowUserの画像一覧
+・User全員の画像一覧（モザイク無し）
+・投稿画面
+・MyPage画面
+・決済機能
 
 ## Getting Started
 
