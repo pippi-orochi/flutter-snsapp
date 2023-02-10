@@ -30,19 +30,15 @@ void main() async {
 }
 
 class ChatApp extends StatelessWidget {
+  bool dark = true;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       // アプリ名
       title: 'ChatApp',
-      theme: ThemeData(
-        // テーマカラー
-        primarySwatch: Colors.blue,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        fontFamily: 'NotoSansCJKJp',
-      ),
+      theme: dark ? ThemeData.dark() : ThemeData.light(),
+      darkTheme: ThemeData.dark(),
       // ログイン画面を表示
       home: LoginPage(),
     );
@@ -169,11 +165,12 @@ class ChatPage extends StatelessWidget {
   ChatPage(this.user);
   // ユーザー情報
   final User user;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('チャット'),
+        title: const Text('FOLLOW US'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.logout),
@@ -193,14 +190,109 @@ class ChatPage extends StatelessWidget {
         ],
       ),
       body: Center(
-        child: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              fit: BoxFit.fitHeight,
-              image: AssetImage('images/sample.jpg'),
-            ),
+          child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 414),
+              child: Column(
+                children: [
+                  // Container(
+                  //   padding: EdgeInsets.all(8),
+                  //   child: Text('ログイン情報：${user.email}'),
+                  // ),
+                  Expanded(
+                    // FutureBuilder
+                    // 非同期処理の結果を元にWidgetを作れる
+                    child: StreamBuilder<QuerySnapshot>(
+                      // 投稿メッセージ一覧を取得（非同期処理）
+                      // 投稿日時でソート
+                      stream: FirebaseFirestore.instance
+                          .collection('posts')
+                          .orderBy('date')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        // データが取得できた場合
+                        if (snapshot.hasData) {
+                          final List<DocumentSnapshot> documents =
+                              snapshot.data!.docs;
+                          // 取得した投稿メッセージ一覧を元にリスト表示
+                          return ListView(
+                            children: documents.map((document) {
+                              return Card(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: <Widget>[
+                                    ListTile(
+                                      title: Text(document['text']),
+                                      // 自分の投稿メッセージの場合は削除ボタンを表示
+                                      trailing: document['email'] == user.email
+                                          ? IconButton(
+                                              icon: Icon(Icons.delete),
+                                              onPressed: () async {
+                                                // 投稿メッセージのドキュメントを削除
+                                                await FirebaseFirestore.instance
+                                                    .collection('posts')
+                                                    .doc(document.id)
+                                                    .delete();
+                                              },
+                                            )
+                                          : null,
+                                    ),
+                                    Container(
+                                        // width: 154,
+                                        // height: 230,
+                                        child: Image.network(
+                                      document['imageUrl'],
+                                      fit: BoxFit.contain,
+                                    )),
+                                    ListTile(title: Text(document['email'])),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }
+                        // データが読込中の場合
+                        return Center(
+                          child: Text('読込中...'),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ))),
+      bottomNavigationBar: BottomNavigationBar(
+        unselectedItemColor: Color.fromARGB(255, 255, 255, 255),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.white),
+            label: 'Home',
           ),
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.business, color: Colors.white),
+            label: 'Business',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school, color: Colors.white),
+            label: 'School',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings, color: Colors.white),
+            label: 'Settings',
+          ),
+        ],
+        //  currentIndex: _selectedIndex,
+        //  selectedItemColor: Colors.amber[800],
+        //  onTap: _onItemTapped,
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () async {
+          // 投稿画面に遷移
+          await Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) {
+              return AddPostPage(user);
+            }),
+          );
+        },
       ),
     );
   }
