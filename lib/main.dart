@@ -30,15 +30,15 @@ void main() async {
 }
 
 class ChatApp extends StatelessWidget {
+  bool dark = true;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       // アプリ名
       title: 'ChatApp',
-      theme: ThemeData(
-        // テーマカラー
-        primarySwatch: Colors.blue,
-      ),
+      theme: dark ? ThemeData.dark() : ThemeData.light(),
+      darkTheme: ThemeData.dark(),
       // ログイン画面を表示
       home: LoginPage(),
     );
@@ -63,13 +63,13 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Center(
         child: Container(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               // メールアドレス入力
               TextFormField(
-                decoration: InputDecoration(labelText: 'メールアドレス'),
+                decoration: const InputDecoration(labelText: 'メールアドレス'),
                 onChanged: (String value) {
                   setState(() {
                     email = value;
@@ -78,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               // パスワード入力
               TextFormField(
-                decoration: InputDecoration(labelText: 'パスワード'),
+                decoration: const InputDecoration(labelText: 'パスワード'),
                 obscureText: true,
                 onChanged: (String value) {
                   setState(() {
@@ -87,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                 },
               ),
               Container(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(8),
                 // メッセージ表示
                 child: Text(infoText),
               ),
@@ -95,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 // ユーザー登録ボタン
                 child: ElevatedButton(
-                  child: Text('ユーザー登録'),
+                  child: const Text('ユーザー登録'),
                   onPressed: () async {
                     try {
                       // メール/パスワードでユーザー登録
@@ -125,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 // ログイン登録ボタン
                 child: OutlinedButton(
-                  child: Text('ログイン'),
+                  child: const Text('ログイン'),
                   onPressed: () async {
                     try {
                       // メール/パスワードでログイン
@@ -138,6 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                       // チャット画面に遷移＋ログイン画面を破棄
                       await Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (context) {
+                          print(result.user);
                           return ChatPage(result.user!);
                         }),
                       );
@@ -164,14 +165,15 @@ class ChatPage extends StatelessWidget {
   ChatPage(this.user);
   // ユーザー情報
   final User user;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('チャット'),
+        title: const Text('FOLLOW US'),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () async {
               // ログアウト処理
               // 内部で保持しているログイン情報等が初期化される
@@ -187,60 +189,99 @@ class ChatPage extends StatelessWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            child: Text('ログイン情報：${user.email}'),
+      body: Center(
+          child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 414),
+              child: Column(
+                children: [
+                  // Container(
+                  //   padding: EdgeInsets.all(8),
+                  //   child: Text('ログイン情報：${user.email}'),
+                  // ),
+                  Expanded(
+                    // FutureBuilder
+                    // 非同期処理の結果を元にWidgetを作れる
+                    child: StreamBuilder<QuerySnapshot>(
+                      // 投稿メッセージ一覧を取得（非同期処理）
+                      // 投稿日時でソート
+                      stream: FirebaseFirestore.instance
+                          .collection('posts')
+                          .orderBy('date')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        // データが取得できた場合
+                        if (snapshot.hasData) {
+                          final List<DocumentSnapshot> documents =
+                              snapshot.data!.docs;
+                          // 取得した投稿メッセージ一覧を元にリスト表示
+                          return ListView(
+                            children: documents.map((document) {
+                              return Card(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: <Widget>[
+                                    ListTile(
+                                      title: Text(document['text']),
+                                      // 自分の投稿メッセージの場合は削除ボタンを表示
+                                      trailing: document['email'] == user.email
+                                          ? IconButton(
+                                              icon: Icon(Icons.delete),
+                                              onPressed: () async {
+                                                // 投稿メッセージのドキュメントを削除
+                                                await FirebaseFirestore.instance
+                                                    .collection('posts')
+                                                    .doc(document.id)
+                                                    .delete();
+                                              },
+                                            )
+                                          : null,
+                                    ),
+                                    Container(
+                                        // width: 154,
+                                        // height: 230,
+                                        child: Image.network(
+                                      document['imageUrl'],
+                                      fit: BoxFit.contain,
+                                    )),
+                                    ListTile(title: Text(document['email'])),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }
+                        // データが読込中の場合
+                        return Center(
+                          child: Text('読込中...'),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ))),
+      bottomNavigationBar: BottomNavigationBar(
+        unselectedItemColor: Color.fromARGB(255, 255, 255, 255),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.white),
+            label: 'Home',
           ),
-          Expanded(
-            // FutureBuilder
-            // 非同期処理の結果を元にWidgetを作れる
-            child: StreamBuilder<QuerySnapshot>(
-              // 投稿メッセージ一覧を取得（非同期処理）
-              // 投稿日時でソート
-              stream: FirebaseFirestore.instance
-                  .collection('posts')
-                  .orderBy('date')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                // データが取得できた場合
-                if (snapshot.hasData) {
-                  final List<DocumentSnapshot> documents = snapshot.data!.docs;
-                  // 取得した投稿メッセージ一覧を元にリスト表示
-                  return ListView(
-                    children: documents.map((document) {
-                      return Card(
-                        child: ListTile(
-                          title: Text(document['text']),
-                          leading: Image.network(document['imageUrl']),
-                          subtitle: Text(document['email']),
-                          // 自分の投稿メッセージの場合は削除ボタンを表示
-                          trailing: document['email'] == user.email
-                              ? IconButton(
-                                  icon: Icon(Icons.delete),
-                                  onPressed: () async {
-                                    // 投稿メッセージのドキュメントを削除
-                                    await FirebaseFirestore.instance
-                                        .collection('posts')
-                                        .doc(document.id)
-                                        .delete();
-                                  },
-                                )
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  );
-                }
-                // データが読込中の場合
-                return Center(
-                  child: Text('読込中...'),
-                );
-              },
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.business, color: Colors.white),
+            label: 'Business',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school, color: Colors.white),
+            label: 'School',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings, color: Colors.white),
+            label: 'Settings',
           ),
         ],
+        //  currentIndex: _selectedIndex,
+        //  selectedItemColor: Colors.amber[800],
+        //  onTap: _onItemTapped,
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
@@ -307,17 +348,17 @@ class _AddPostPageState extends State<AddPostPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('チャット投稿'),
+          title: const Text('チャット投稿'),
         ),
         body: Center(
           child: Container(
-            padding: EdgeInsets.all(1),
+            padding: const EdgeInsets.all(1),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 // 投稿メッセージ入力
                 TextFormField(
-                  decoration: InputDecoration(labelText: '投稿メッセージ'),
+                  decoration: const InputDecoration(labelText: '投稿メッセージ'),
                   // 複数行のテキスト入力
                   keyboardType: TextInputType.multiline,
                   // 最大3行
@@ -332,7 +373,7 @@ class _AddPostPageState extends State<AddPostPage> {
                 Container(
                   width: double.infinity,
                   child: ElevatedButton(
-                    child: Text('投稿'),
+                    child: const Text('投稿'),
                     onPressed: () async {
                       final date =
                           DateTime.now().toLocal().toIso8601String(); // 現在の日時
