@@ -151,6 +151,33 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
               ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                // ログイン登録ボタン
+                child: OutlinedButton(
+                  child: const Text('匿名ログイン'),
+                  onPressed: () async {
+                    final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+                    try {
+                      final result = await firebaseAuth.signInAnonymously();
+
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (_) => ChatPage(result.user!),
+                      ));
+                    } catch (e) {
+                      await showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text('エラー'),
+                              content: Text(e.toString()),
+                            );
+                          });
+                    }
+                  },
+                ),
+              ),
             ],
           ),
         ),
