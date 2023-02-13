@@ -161,6 +161,9 @@ class _LoginPageState extends State<LoginPage> {
                     final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
                     try {
                       final result = await firebaseAuth.signInAnonymously();
+                      final auth = FirebaseAuth.instance;
+                      final uid = auth.currentUser?.uid.toString();
+                      print(uid);
 
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
                         builder: (_) => ChatPage(result.user!),
