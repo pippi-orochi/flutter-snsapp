@@ -134,11 +134,21 @@ class _LoginPageState extends State<LoginPage> {
                         email: email,
                         password: password,
                       );
+
+                      final uid = auth.currentUser?.uid.toString();
+                      await FirebaseFirestore.instance
+                          .collection('users') // コレクションID指定
+                          .doc(uid) // ドキュメントID自動生成
+                          .set({
+                        'name': 'John',
+                        'createTime': FieldValue.serverTimestamp(),
+                        'updateTime': FieldValue.serverTimestamp()
+                      });
+
                       // ログインに成功した場合
                       // チャット画面に遷移＋ログイン画面を破棄
                       await Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (context) {
-                          print(result.user);
                           return ChatPage(result.user!);
                         }),
                       );
@@ -163,7 +173,15 @@ class _LoginPageState extends State<LoginPage> {
                       final result = await firebaseAuth.signInAnonymously();
                       final auth = FirebaseAuth.instance;
                       final uid = auth.currentUser?.uid.toString();
-                      print(uid);
+
+                      await FirebaseFirestore.instance
+                          .collection('users') // コレクションID指定
+                          .doc(uid) // ドキュメントID自動生成
+                          .set({
+                        'name': 'John',
+                        'createTime': FieldValue.serverTimestamp(),
+                        'updateTime': FieldValue.serverTimestamp()
+                      });
 
                       Navigator.of(context).pushReplacement(MaterialPageRoute(
                         builder: (_) => ChatPage(result.user!),
@@ -235,10 +253,10 @@ class ChatPage extends StatelessWidget {
                       // 投稿メッセージ一覧を取得（非同期処理）
                       // 投稿日時でソート
                       stream: FirebaseFirestore.instance
-                          .collection('posts')
-                          .orderBy('date')
+                          .collectionGroup('post')
                           .snapshots(),
                       builder: (context, snapshot) {
+                        print(snapshot);
                         // データが取得できた場合
                         if (snapshot.hasData) {
                           final List<DocumentSnapshot> documents =
@@ -257,14 +275,41 @@ class ChatPage extends StatelessWidget {
                                           ? IconButton(
                                               icon: Icon(Icons.delete),
                                               onPressed: () async {
+                                                final FirebaseAuth auth =
+                                                    FirebaseAuth.instance;
+                                                final uid = auth
+                                                    .currentUser?.uid
+                                                    .toString();
                                                 // 投稿メッセージのドキュメントを削除
                                                 await FirebaseFirestore.instance
-                                                    .collection('posts')
+                                                    .collection('users')
+                                                    .doc(uid)
+                                                    .collection('post')
                                                     .doc(document.id)
                                                     .delete();
                                               },
                                             )
-                                          : null,
+                                          : IconButton(
+                                              icon: Icon(Icons.eight_k_plus),
+                                              onPressed: () async {
+                                                final FirebaseAuth auth =
+                                                    FirebaseAuth.instance;
+                                                final uid = auth
+                                                    .currentUser?.uid
+                                                    .toString();
+                                                await FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(uid)
+                                                    .collection('followUsers')
+                                                    .doc(document.id)
+                                                    .set({
+                                                  'id': document.id,
+                                                  'userRef': document['author'],
+                                                  'createTime': FieldValue
+                                                      .serverTimestamp()
+                                                });
+                                              },
+                                            ),
                                     ),
                                     Container(
                                         // width: 154,
@@ -408,16 +453,26 @@ class _AddPostPageState extends State<AddPostPage> {
                       final date =
                           DateTime.now().toLocal().toIso8601String(); // 現在の日時
                       final email = widget.user.email; // AddPostPage のデータを参照
-                      // 投稿メッセージ用ドキュメント作成
+
+                      final FirebaseAuth auth = FirebaseAuth.instance;
+                      final uid = auth.currentUser?.uid.toString();
+                      final userRef = FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid);
                       await FirebaseFirestore.instance
-                          .collection('posts') // コレクションID指定
-                          .doc() // ドキュメントID自動生成
+                          .collection('users')
+                          .doc(uid)
+                          .collection('post')
+                          .doc()
                           .set({
                         'text': messageText,
                         'email': email,
-                        'date': date,
+                        'author': userRef.path,
+                        'createTime': date,
+                        'updateTime': FieldValue.serverTimestamp(),
                         'imageUrl': url
                       });
+
                       // 1つ前の画面に戻る
                       Navigator.of(context).pop();
                     },
