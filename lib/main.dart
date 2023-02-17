@@ -218,7 +218,7 @@ class ChatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FOLLOW US'),
+        title: const Text('GALLERY'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.logout),
@@ -264,6 +264,7 @@ class ChatPage extends StatelessWidget {
                           // 取得した投稿メッセージ一覧を元にリスト表示
                           return ListView(
                             children: documents.map((document) {
+                              print(document);
                               return Card(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.max,
@@ -297,14 +298,33 @@ class ChatPage extends StatelessWidget {
                                                 final uid = auth
                                                     .currentUser?.uid
                                                     .toString();
+                                                final userRef =
+                                                    FirebaseFirestore.instance
+                                                        .collection('users')
+                                                        .doc(uid);
+                                                var followedUserRef =
+                                                    document['author']
+                                                        .replaceAll(
+                                                            "users/", "");
                                                 await FirebaseFirestore.instance
                                                     .collection('users')
                                                     .doc(uid)
                                                     .collection('followUsers')
-                                                    .doc(document.id)
+                                                    .doc(followedUserRef)
                                                     .set({
-                                                  'id': document.id,
+                                                  'id': followedUserRef,
                                                   'userRef': document['author'],
+                                                  'createTime': FieldValue
+                                                      .serverTimestamp()
+                                                });
+                                                await FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(followedUserRef)
+                                                    .collection('followedUsers')
+                                                    .doc(uid)
+                                                    .set({
+                                                  'id': uid,
+                                                  'userRef': userRef.path,
                                                   'createTime': FieldValue
                                                       .serverTimestamp()
                                                 });
@@ -358,18 +378,113 @@ class ChatPage extends StatelessWidget {
         //  selectedItemColor: Colors.amber[800],
         //  onTap: _onItemTapped,
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: () async {
-          // 投稿画面に遷移
-          await Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) {
-              return AddPostPage(user);
-            }),
-          );
-        },
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(onPressed: () {}),
+          SizedBox(height: 20),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FloatingActionButton(
+                onPressed: () async {
+                  // 投稿画面に遷移
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) {
+                      return AddPostPage(user);
+                    }),
+                  );
+                },
+              ),
+              SizedBox(width: 20),
+              FloatingActionButton(
+                onPressed: () async {
+                  // 投稿画面に遷移
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) {
+                      return AddPostPage1(user);
+                    }),
+                  );
+                },
+              ),
+              SizedBox(width: 20),
+              FloatingActionButton(onPressed: () {}),
+            ],
+          ),
+          SizedBox(height: 20),
+          FloatingActionButton(onPressed: () {}),
+        ],
       ),
     );
+  }
+}
+
+// 投稿画面用Widget
+class AddPostPage1 extends StatefulWidget {
+  // 引数からユーザー情報を受け取る
+  AddPostPage1(this.user);
+  // ユーザー情報
+  final User user;
+
+  @override
+  _AddPostPageState1 createState() => _AddPostPageState1();
+}
+
+class _AddPostPageState1 extends State<AddPostPage1> {
+  // 作成したドキュメント一覧
+  List<DocumentSnapshot> documentList = [];
+  @override
+  Widget build(BuildContext context) {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final uid = auth.currentUser?.uid.toString();
+    return Scaffold(
+        body: SafeArea(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+          Expanded(
+            child: Container(
+              height: double.infinity,
+              alignment: Alignment.topCenter,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(uid)
+                    .collection('post')
+                    .orderBy('createTime')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Text('エラーが発生しました');
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final list = snapshot.requireData.docs
+                      .map<String>((DocumentSnapshot document) {
+                    final documentData =
+                        document.data()! as Map<String, dynamic>;
+                    return documentData['email']! as String;
+                  }).toList();
+
+                  final reverseList = list.reversed.toList();
+                  return ListView.builder(
+                    itemCount: reverseList.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Center(
+                        child: Text(
+                          reverseList[index],
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ])));
   }
 }
 
@@ -412,7 +527,6 @@ class _AddPostPageState extends State<AddPostPage> {
     var dowurl = await storedImage.ref.getDownloadURL();
     var value = dowurl.toString();
 
-    // print(pickedFile);
     // Image.network(pickedFile!.path);
     setState(() {
       url = value;
