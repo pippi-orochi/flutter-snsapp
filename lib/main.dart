@@ -1,5 +1,5 @@
 // ignore: unused_import
-// ignore_for_file: unused_import, depend_on_referenced_packages
+// ignore_for_file: unused_import, depend_on_referenced_packages, avoid_print
 import 'dart:convert';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -247,111 +247,42 @@ class ChatPage extends StatelessWidget {
                   //   child: Text('ログイン情報：${user.email}'),
                   // ),
                   Expanded(
-                    // FutureBuilder
-                    // 非同期処理の結果を元にWidgetを作れる
-                    child: StreamBuilder<QuerySnapshot>(
-                      // 投稿メッセージ一覧を取得（非同期処理）
-                      // 投稿日時でソート
-                      stream: FirebaseFirestore.instance
-                          .collectionGroup('post')
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        print(snapshot);
-                        // データが取得できた場合
-                        if (snapshot.hasData) {
-                          final List<DocumentSnapshot> documents =
-                              snapshot.data!.docs;
-                          // 取得した投稿メッセージ一覧を元にリスト表示
-                          return ListView(
-                            children: documents.map((document) {
-                              print(document);
-                              return Card(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: <Widget>[
-                                    ListTile(
-                                      title: Text(document['text']),
-                                      // 自分の投稿メッセージの場合は削除ボタンを表示
-                                      trailing: document['email'] == user.email
-                                          ? IconButton(
-                                              icon: Icon(Icons.delete),
-                                              onPressed: () async {
-                                                final FirebaseAuth auth =
-                                                    FirebaseAuth.instance;
-                                                final uid = auth
-                                                    .currentUser?.uid
-                                                    .toString();
-                                                // 投稿メッセージのドキュメントを削除
-                                                await FirebaseFirestore.instance
-                                                    .collection('users')
-                                                    .doc(uid)
-                                                    .collection('post')
-                                                    .doc(document.id)
-                                                    .delete();
-                                              },
-                                            )
-                                          : IconButton(
-                                              icon: Icon(Icons.eight_k_plus),
-                                              onPressed: () async {
-                                                final FirebaseAuth auth =
-                                                    FirebaseAuth.instance;
-                                                final uid = auth
-                                                    .currentUser?.uid
-                                                    .toString();
-                                                final userRef =
-                                                    FirebaseFirestore.instance
-                                                        .collection('users')
-                                                        .doc(uid);
-                                                var followedUserRef =
-                                                    document['author']
-                                                        .replaceAll(
-                                                            "users/", "");
-                                                await FirebaseFirestore.instance
-                                                    .collection('users')
-                                                    .doc(uid)
-                                                    .collection('followUsers')
-                                                    .doc(followedUserRef)
-                                                    .set({
-                                                  'id': followedUserRef,
-                                                  'userRef': document['author'],
-                                                  'createTime': FieldValue
-                                                      .serverTimestamp()
-                                                });
-                                                await FirebaseFirestore.instance
-                                                    .collection('users')
-                                                    .doc(followedUserRef)
-                                                    .collection('followedUsers')
-                                                    .doc(uid)
-                                                    .set({
-                                                  'id': uid,
-                                                  'userRef': userRef.path,
-                                                  'createTime': FieldValue
-                                                      .serverTimestamp()
-                                                });
-                                              },
-                                            ),
-                                    ),
-                                    Container(
-                                        // width: 154,
-                                        // height: 230,
-                                        child: Image.network(
-                                      document['imageUrl'],
-                                      fit: BoxFit.contain,
-                                    )),
-                                    ListTile(title: Text(document['email'])),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
+                    child: SingleChildScrollView(
+                      // FutureBuilder
+                      // 非同期処理の結果を元にWidgetを作れる
+                      child: StreamBuilder<QuerySnapshot>(
+                        // 投稿メッセージ一覧を取得（非同期処理）
+                        // 投稿日時でソート
+                        stream: FirebaseFirestore.instance
+                            .collectionGroup('post')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          // データが取得できた場合
+                          if (snapshot.hasData) {
+                            final List<DocumentSnapshot> documents =
+                                snapshot.data!.docs;
+                            print(documents.length);
+                            return Wrap(
+                              children: [
+                                for (int i = 0; i < documents.length; i++) ...{
+                                  Container(
+                                      width: 200,
+                                      child: Image.network(
+                                        '${documents[i]['imageUrl']}',
+                                        fit: BoxFit.contain,
+                                      )),
+                                }
+                              ],
+                            );
+                          }
+                          // データが読込中の場合
+                          return Center(
+                            child: Text('読込中...'),
                           );
-                        }
-                        // データが読込中の場合
-                        return Center(
-                          child: Text('読込中...'),
-                        );
-                      },
+                        },
+                      ),
                     ),
-                  ),
+                  )
                 ],
               ))),
       bottomNavigationBar: BottomNavigationBar(
@@ -460,14 +391,12 @@ class _AddPostPageState1 extends State<AddPostPage1> {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
-
                   final list = snapshot.requireData.docs
                       .map<String>((DocumentSnapshot document) {
                     final documentData =
                         document.data()! as Map<String, dynamic>;
                     return documentData['email']! as String;
                   }).toList();
-
                   final reverseList = list.reversed.toList();
                   return ListView.builder(
                     itemCount: reverseList.length,
