@@ -207,6 +207,55 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
+class MyApp extends StatelessWidget {
+  // 引数からユーザー情報を受け取れるようにする
+  MyApp(this.user);
+  // ユーザー情報
+  final User user;
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      title: 'firebase_test',
+      //home: GetCollectionUseStream(),
+      home: GetDocUseStream(),
+      //home: GetCollectionUseFuture(),
+      //home: GetDocUseFuture(),
+    );
+  }
+}
+
+class GetDocUseStream extends StatelessWidget {
+  const GetDocUseStream({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+
+    return Scaffold(
+      body: Center(
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: users.doc('pgC10zl69VPRcPXAe8UlhoCQwrH3').snapshots(),
+          builder:
+              (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+            if (snapshot.hasError) {
+              return const Text("Something went wrong");
+            }
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text("Loading");
+            }
+
+            Map<String, dynamic> data =
+                snapshot.data!.data() as Map<String, dynamic>;
+            return Text("name:${data['name']}   age:${data['name']}");
+          },
+        ),
+      ),
+    );
+  }
+}
+
 // チャット画面用Widget
 class ChatPage extends StatelessWidget {
   // 引数からユーザー情報を受け取れるようにする
@@ -261,7 +310,7 @@ class ChatPage extends StatelessWidget {
                           if (snapshot.hasData) {
                             final List<DocumentSnapshot> documents =
                                 snapshot.data!.docs;
-                            print(documents.length);
+                            // print(documents.length);
                             return Wrap(
                               children: [
                                 for (int i = 0; i < documents.length; i++) ...{
@@ -361,59 +410,115 @@ class AddPostPage1 extends StatefulWidget {
   _AddPostPageState1 createState() => _AddPostPageState1();
 }
 
+class MessageStream extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(
+              backgroundColor: Colors.lightGreenAccent,
+            ),
+          );
+        }
+        final messages = snapshot.data!.docs;
+        List<MessageBubble> messageBubbles = [];
+        for (var message in messages) {
+          final messageText = message['name'];
+          final messageSender = message['name'];
+
+          final messageBubble = MessageBubble(
+            sender: messageSender,
+            text: messageText,
+          );
+          messageBubbles.add(messageBubble);
+        }
+        return Expanded(
+          child: ListView(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20.0),
+            children: messageBubbles,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class MessageBubble extends StatelessWidget {
+  MessageBubble({required this.sender, required this.text});
+
+  final String sender;
+  final String text;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      // 周りに空白
+      padding: EdgeInsets.all(10.0),
+      child: Column(
+        // 右に寄せる
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          Text(
+            sender,
+            style: TextStyle(
+              fontSize: 12.0,
+              color: Colors.black54,
+            ),
+          ),
+          Material(
+            // 丸みをつける
+            borderRadius: BorderRadius.circular(30.0),
+            // 影をつける
+            elevation: 5.0,
+            color: Colors.lightBlueAccent,
+            child: Padding(
+              // メッセージの中に空白
+              padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15.0,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AddPostPageState1 extends State<AddPostPage1> {
-  // 作成したドキュメント一覧
-  List<DocumentSnapshot> documentList = [];
   @override
   Widget build(BuildContext context) {
     final FirebaseAuth auth = FirebaseAuth.instance;
     final uid = auth.currentUser?.uid.toString();
+
     return Scaffold(
-        body: SafeArea(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-          Expanded(
-            child: Container(
-              height: double.infinity,
-              alignment: Alignment.topCenter,
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(uid)
-                    .collection('post')
-                    .orderBy('createTime')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Text('エラーが発生しました');
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final list = snapshot.requireData.docs
-                      .map<String>((DocumentSnapshot document) {
-                    final documentData =
-                        document.data()! as Map<String, dynamic>;
-                    return documentData['email']! as String;
-                  }).toList();
-                  final reverseList = list.reversed.toList();
-                  return ListView.builder(
-                    itemCount: reverseList.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return Center(
-                        child: Text(
-                          reverseList[index],
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+        appBar: AppBar(
+          title: const Text('GALLERY'),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                // ログアウト処理
+                // 内部で保持しているログイン情報等が初期化される
+                // （現時点ではログアウト時はこの処理を呼び出せばOKと、思うぐらいで大丈夫です）
+                await FirebaseAuth.instance.signOut();
+                // ログイン画面に遷移＋チャット画面を破棄
+                await Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) {
+                    return LoginPage();
+                  }),
+                );
+              },
             ),
-          ),
-        ])));
+          ],
+        ),
+        body: GetDocUseStream());
   }
 }
 
