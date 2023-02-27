@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Center(
         child: Container(
-          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 414),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -265,6 +265,33 @@ class ChatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String url = '';
+    XFile? _image;
+
+    final imagePicker = ImagePicker();
+
+    // ギャラリーから画像を取得するメソッド
+    Future getImageFromGarally1() async {
+      final pickerFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      var bytes = await pickerFile?.readAsBytes();
+      File file = File(pickerFile!.path);
+      FirebaseStorage storage = FirebaseStorage.instance;
+      var fileName = basename(file.path);
+      final storedImage = await storage.ref("UL/$fileName").putData(bytes!);
+      var dowurl = await storedImage.ref.getDownloadURL();
+      var value = dowurl.toString();
+      url = value;
+      _image = XFile(pickerFile.path);
+      print(url);
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) {
+          return AddPostPage(user, _image!, url);
+        }),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('GALLERY'),
@@ -314,12 +341,20 @@ class ChatPage extends StatelessWidget {
                             return Wrap(
                               children: [
                                 for (int i = 0; i < documents.length; i++) ...{
-                                  Container(
-                                      width: 200,
-                                      child: Image.network(
-                                        '${documents[i]['imageUrl']}',
-                                        fit: BoxFit.contain,
-                                      )),
+                                  Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                            alignment: Alignment.center,
+                                            width: 200,
+                                            child: Image.network(
+                                              '${documents[i]['imageUrl']}',
+                                              fit: BoxFit.contain,
+                                            )),
+                                      ])
                                 }
                               ],
                             );
@@ -361,23 +396,25 @@ class ChatPage extends StatelessWidget {
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FloatingActionButton(onPressed: () {}),
+          FloatingActionButton(backgroundColor: Colors.grey, onPressed: () {}),
           SizedBox(height: 20),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               FloatingActionButton(
+                backgroundColor: Colors.grey,
                 onPressed: () async {
                   // 投稿画面に遷移
                   await Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) {
-                      return AddPostPage(user);
+                      return AddPostPage(user, _image!, url);
                     }),
                   );
                 },
               ),
               SizedBox(width: 20),
               FloatingActionButton(
+                backgroundColor: Colors.grey,
                 onPressed: () async {
                   // 投稿画面に遷移
                   await Navigator.of(context).push(
@@ -388,11 +425,15 @@ class ChatPage extends StatelessWidget {
                 },
               ),
               SizedBox(width: 20),
-              FloatingActionButton(onPressed: () {}),
+              FloatingActionButton(
+                  backgroundColor: Colors.grey, onPressed: () {}),
             ],
           ),
           SizedBox(height: 20),
-          FloatingActionButton(onPressed: () {}),
+          FloatingActionButton(
+              backgroundColor: Colors.grey,
+              onPressed: getImageFromGarally1,
+              child: const Icon(Icons.photo_camera)),
         ],
       ),
     );
@@ -524,10 +565,15 @@ class _AddPostPageState1 extends State<AddPostPage1> {
 
 // 投稿画面用Widget
 class AddPostPage extends StatefulWidget {
+  final String url;
+
   // 引数からユーザー情報を受け取る
-  AddPostPage(this.user);
+  AddPostPage(this.user, this._image, this.url);
+
   // ユーザー情報
   final User user;
+  final XFile _image;
+
   @override
   _AddPostPageState createState() => _AddPostPageState();
 }
@@ -535,19 +581,10 @@ class AddPostPage extends StatefulWidget {
 class _AddPostPageState extends State<AddPostPage> {
   // 入力した投稿メッセージ
   String messageText = '';
-  String url = '';
-
   XFile? _image;
+  var isOn = false;
+
   final imagePicker = ImagePicker();
-  // カメラから画像を取得するメソッド
-  Future getImageFromCamera() async {
-    final pickedFile = await imagePicker.pickImage(source: ImageSource.camera);
-    setState(() {
-      if (pickedFile != null) {
-        _image = XFile(pickedFile.path);
-      }
-    });
-  }
 
   // ギャラリーから画像を取得するメソッド
   Future getImageFromGarally() async {
@@ -561,27 +598,50 @@ class _AddPostPageState extends State<AddPostPage> {
     var dowurl = await storedImage.ref.getDownloadURL();
     var value = dowurl.toString();
 
-    // Image.network(pickedFile!.path);
     setState(() {
-      url = value;
+      if (pickerFile != null) {
+        _image = XFile(pickerFile.path);
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final email = widget.user.email; // AddPostPage のデータを参照
+    final url = widget.url;
+    final _image = widget._image; //// AddPostPage のデータを参照
+    print(email);
+    print(url);
     return Scaffold(
         appBar: AppBar(
-          title: const Text('チャット投稿'),
+          title: const Text('新規投稿'),
         ),
         body: Center(
-          child: Container(
-            padding: const EdgeInsets.all(1),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 414),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                Container(
+                  width: double.infinity,
+                  child: _image == null
+                      ? Text(
+                          '写真を選択してください',
+                          // ignore: deprecated_member_use
+                          style: Theme.of(context).textTheme.headline4,
+                        )
+                      : Container(
+                          alignment: Alignment.center,
+                          height: 150,
+                          child: Image.network(
+                            '${_image!.path}',
+                            fit: BoxFit.contain,
+                          )),
+                ),
+                const SizedBox(height: 8),
                 // 投稿メッセージ入力
                 TextFormField(
-                  decoration: const InputDecoration(labelText: '投稿メッセージ'),
+                  decoration: const InputDecoration(labelText: '投稿文を書く'),
                   // 複数行のテキスト入力
                   keyboardType: TextInputType.multiline,
                   // 最大3行
@@ -593,14 +653,40 @@ class _AddPostPageState extends State<AddPostPage> {
                   },
                 ),
                 const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Container(
+                        child: Text(
+                      'お試し投稿',
+                      // ignore: deprecated_member_use
+                      // style: Theme.of(context).textTheme.headline4,
+                    )),
+                    Switch(
+                      value: isOn,
+                      onChanged: (bool? value) {
+                        if (value != null) {
+                          setState(() {
+                            isOn = value;
+                            print("$isOn");
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 38),
                 Container(
                   width: double.infinity,
                   child: ElevatedButton(
-                    child: const Text('投稿'),
+                    style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all(Colors.grey)),
+                    child: const Text('シェア'),
                     onPressed: () async {
                       final date =
                           DateTime.now().toLocal().toIso8601String(); // 現在の日時
-                      final email = widget.user.email; // AddPostPage のデータを参照
+                      final email = widget.user.email; // AddPostPage のデータを参
 
                       final FirebaseAuth auth = FirebaseAuth.instance;
                       final uid = auth.currentUser?.uid.toString();
@@ -625,16 +711,6 @@ class _AddPostPageState extends State<AddPostPage> {
                       Navigator.of(context).pop();
                     },
                   ),
-                ),
-                Container(
-                  width: double.infinity,
-                  child: _image == null
-                      ? Text(
-                          '写真を選択してください',
-                          // ignore: deprecated_member_use
-                          style: Theme.of(context).textTheme.headline4,
-                        )
-                      : Image.network(_image!.path),
                 )
               ],
             ),
@@ -642,12 +718,9 @@ class _AddPostPageState extends State<AddPostPage> {
         ),
         floatingActionButton:
             Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          // カメラから取得するボタン
-          FloatingActionButton(
-              onPressed: getImageFromCamera,
-              child: const Icon(Icons.photo_camera)),
           // ギャラリーから取得するボタン
           FloatingActionButton(
+              backgroundColor: Colors.grey,
               onPressed: getImageFromGarally,
               child: const Icon(Icons.photo_camera)),
         ]));
