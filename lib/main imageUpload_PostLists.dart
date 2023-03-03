@@ -51,10 +51,11 @@ class MessageStream5 extends StatelessWidget {
         List<String> listImages = [];
         for (var message in messages) {
           listImages.add(message['imageUrl']);
+          print(messages);
         }
         return Center(
-          //   child: Container(
-          // constraints: const BoxConstraints(maxWidth: 414),
+            child: Container(
+          constraints: const BoxConstraints(maxWidth: 414),
           child: StaggeredGridView.countBuilder(
               mainAxisSpacing: 10,
               crossAxisSpacing: 8,
@@ -88,8 +89,7 @@ class MessageStream5 extends StatelessWidget {
               staggeredTileBuilder: (index) {
                 return StaggeredTile.count(1, index.isEven ? 1.4 : 1.9);
               }),
-          // )
-        );
+        ));
       },
     );
   }
@@ -141,6 +141,11 @@ class MyStaggeredGridViewScreen extends StatelessWidget {
             listImageslistImages.add(message.id);
             listImagesreference.add(message.reference);
           }
+          print(listImages.length);
+          print("AAAAAAAAAA");
+          print(listImageslistImages);
+          print("BBBBBBBBB");
+          print(listImagesreference);
           return Scaffold(
               backgroundColor: Colors.black,
               appBar: AppBar(
@@ -157,8 +162,8 @@ class MyStaggeredGridViewScreen extends StatelessWidget {
                 ],
               ),
               body: Center(
-                //   child: Container(
-                // constraints: const BoxConstraints(maxWidth: 414),
+                  child: Container(
+                constraints: const BoxConstraints(maxWidth: 414),
                 child: StaggeredGridView.count(
                   crossAxisCount: 6,
                   children: List.generate(listImages.length, (index) {
@@ -169,8 +174,7 @@ class MyStaggeredGridViewScreen extends StatelessWidget {
                     return const StaggeredTile.fit(2);
                   }),
                 ),
-                // )
-              ));
+              )));
         });
   }
 }
@@ -187,6 +191,7 @@ class _Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(index);
     return Container(
         margin: const EdgeInsets.all(10),
         child: ClipRRect(
@@ -222,6 +227,7 @@ class ChatAppChatApp extends StatefulWidget {
 }
 
 String listToString(List<String> listImagereference2) {
+  print(listImagereference2);
   return listImagereference2
       .map<String>((String value) => value.toString())
       .join('');
@@ -238,7 +244,16 @@ class _ChatAppChatAppState extends State<ChatAppChatApp> {
     final listImagereference1 = listImagereference.replaceFirst(
         'DocumentReference<Map<String, dynamic>>(users/', '');
     final listImagereference2 = listImagereference1.split(RegExp(r'/post/.*$'));
+    print(listImagereference2);
+
     String listAsString = listToString(listImagereference2);
+    print('List<int>→String（カンマ区切り）');
+    print(listAsString.runtimeType);
+    print(listAsString);
+
+    print(email);
+    print(url);
+    print(listImagereference);
     CollectionReference users = FirebaseFirestore.instance.collection('users');
 
     return Scaffold(
@@ -257,64 +272,51 @@ class _ChatAppChatAppState extends State<ChatAppChatApp> {
           ],
         ),
         body: Center(
-            // child: ConstrainedBox(
-            //     constraints: const BoxConstraints(maxWidth: 414),
-            child: Column(children: [
-          Expanded(
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: users
-                  .doc(listAsString)
-                  .collection('post')
-                  .doc(url)
-                  .snapshots(),
+            child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 414),
+                child: Column(children: [
+                  Expanded(
+                    child: StreamBuilder<DocumentSnapshot>(
+                      stream: users
+                          .doc(listAsString)
+                          .collection('post')
+                          .doc(url)
+                          .snapshots(),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<DocumentSnapshot> snapshot) {
+                        if (snapshot.hasError) {
+                          return const Text("Something went wrong");
+                        }
 
-              // User[] = users
-              //     .doc(listAsString)
-              //     .collection('followUsers')
-              //     .doc()
-              //     .snapshots(),
-              // stream: users
-              //     .doc(User[1])
-              //     .collection('post')
-              //     .doc()
-              //     .snapshots(),
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Text("Loading");
+                        }
 
-              builder: (BuildContext context,
-                  AsyncSnapshot<DocumentSnapshot> snapshot) {
-                if (snapshot.hasError) {
-                  return const Text("Something went wrong");
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Text("Loading");
-                }
-
-                Map<String, dynamic> data =
-                    snapshot.data!.data() as Map<String, dynamic>;
-                return Card(
-                    child: SingleChildScrollView(
-                        child: Column(
-                            mainAxisSize: MainAxisSize.max,
-                            children: <Widget>[
-                      ListTile(
-                        title: GetDocUseStream2(listAsString),
-                      ),
-                      Container(
-                          // width: 154,
-                          // height: 230,
-                          child: Image.network(
-                        email,
-                        fit: BoxFit.contain,
-                      )),
-                      ListTile(title: Text(ListImageText)),
-                    ])));
-                // Text("name:${data['email']}   age:${data['text']}")
-              },
-            ),
-          ),
-        ]
-                // )
-                )));
+                        Map<String, dynamic> data =
+                            snapshot.data!.data() as Map<String, dynamic>;
+                        return Card(
+                            child: SingleChildScrollView(
+                                child: Column(
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: <Widget>[
+                              ListTile(
+                                title: GetDocUseStream2(listAsString),
+                              ),
+                              Container(
+                                  // width: 154,
+                                  // height: 230,
+                                  child: Image.network(
+                                email,
+                                fit: BoxFit.contain,
+                              )),
+                              ListTile(title: Text(ListImageText)),
+                            ])));
+                        // Text("name:${data['email']}   age:${data['text']}")
+                      },
+                    ),
+                  ),
+                ]))));
   }
 }
 
@@ -390,147 +392,147 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        // child: Container(
-        //   constraints: const BoxConstraints(maxWidth: 414),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 414),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
 // メールアドレス入力
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'メールアドレス'),
-              onChanged: (String value) {
-                setState(() {
-                  email = value;
-                });
-              },
-            ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'メールアドレス'),
+                onChanged: (String value) {
+                  setState(() {
+                    email = value;
+                  });
+                },
+              ),
 // パスワード入力
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'パスワード'),
-              obscureText: true,
-              onChanged: (String value) {
-                setState(() {
-                  password = value;
-                });
-              },
-            ),
-            Container(
-              padding: const EdgeInsets.all(8),
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'パスワード'),
+                obscureText: true,
+                onChanged: (String value) {
+                  setState(() {
+                    password = value;
+                  });
+                },
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
 // メッセージ表示
-              child: Text(infoText),
-            ),
-            Container(
-              width: double.infinity,
+                child: Text(infoText),
+              ),
+              Container(
+                width: double.infinity,
 // ユーザー登録ボタン
-              child: ElevatedButton(
-                child: const Text('ユーザー登録'),
-                onPressed: () async {
-                  try {
+                child: ElevatedButton(
+                  child: const Text('ユーザー登録'),
+                  onPressed: () async {
+                    try {
 // メール/パスワードでユーザー登録
-                    final FirebaseAuth auth = FirebaseAuth.instance;
-                    final result = await auth.createUserWithEmailAndPassword(
-                      email: email,
-                      password: password,
-                    );
+                      final FirebaseAuth auth = FirebaseAuth.instance;
+                      final result = await auth.createUserWithEmailAndPassword(
+                        email: email,
+                        password: password,
+                      );
 // ユーザー登録に成功した場合
 // チャット画面に遷移＋ログイン画面を破棄
-                    await Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) {
-                        return ChatPage(result.user!);
-                      }),
-                    );
-                  } catch (e) {
+                      await Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (context) {
+                          return ChatPage(result.user!);
+                        }),
+                      );
+                    } catch (e) {
 // ユーザー登録に失敗した場合
-                    setState(() {
-                      infoText = "登録に失敗しました：${e.toString()}";
-                    });
-                  }
-                },
+                      setState(() {
+                        infoText = "登録に失敗しました：${e.toString()}";
+                      });
+                    }
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
 // ログイン登録ボタン
-              child: OutlinedButton(
-                child: const Text('ログイン'),
-                onPressed: () async {
-                  try {
+                child: OutlinedButton(
+                  child: const Text('ログイン'),
+                  onPressed: () async {
+                    try {
 // メール/パスワードでログイン
-                    final FirebaseAuth auth = FirebaseAuth.instance;
-                    final result = await auth.signInWithEmailAndPassword(
-                      email: email,
-                      password: password,
-                    );
+                      final FirebaseAuth auth = FirebaseAuth.instance;
+                      final result = await auth.signInWithEmailAndPassword(
+                        email: email,
+                        password: password,
+                      );
 
-                    final uid = auth.currentUser?.uid.toString();
-                    await FirebaseFirestore.instance
-                        .collection('users') // コレクションID指定
-                        .doc(uid) // ドキュメントID自動生成
-                        .set({
-                      'name': 'John',
-                      'createTime': FieldValue.serverTimestamp(),
-                      'updateTime': FieldValue.serverTimestamp()
-                    });
+                      final uid = auth.currentUser?.uid.toString();
+                      await FirebaseFirestore.instance
+                          .collection('users') // コレクションID指定
+                          .doc(uid) // ドキュメントID自動生成
+                          .set({
+                        'name': 'John',
+                        'createTime': FieldValue.serverTimestamp(),
+                        'updateTime': FieldValue.serverTimestamp()
+                      });
 
-                    // ログインに成功した場合
-                    // チャット画面に遷移＋ログイン画面を破棄
-                    await Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) {
-                        return ChatPage(result.user!);
-                      }),
-                    );
-                  } catch (e) {
-                    // ログインに失敗した場合
-                    setState(() {
-                      infoText = "ログインに失敗しました：${e.toString()}";
-                    });
-                  }
-                },
+                      // ログインに成功した場合
+                      // チャット画面に遷移＋ログイン画面を破棄
+                      await Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (context) {
+                          return ChatPage(result.user!);
+                        }),
+                      );
+                    } catch (e) {
+                      // ログインに失敗した場合
+                      setState(() {
+                        infoText = "ログインに失敗しました：${e.toString()}";
+                      });
+                    }
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              // ログイン登録ボタン
-              child: OutlinedButton(
-                child: const Text('匿名ログイン'),
-                onPressed: () async {
-                  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-                  try {
-                    final result = await firebaseAuth.signInAnonymously();
-                    final auth = FirebaseAuth.instance;
-                    final uid = auth.currentUser?.uid.toString();
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                // ログイン登録ボタン
+                child: OutlinedButton(
+                  child: const Text('匿名ログイン'),
+                  onPressed: () async {
+                    final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+                    try {
+                      final result = await firebaseAuth.signInAnonymously();
+                      final auth = FirebaseAuth.instance;
+                      final uid = auth.currentUser?.uid.toString();
 
-                    await FirebaseFirestore.instance
-                        .collection('users') // コレクションID指定
-                        .doc(uid) // ドキュメントID自動生成
-                        .set({
-                      'name': 'John',
-                      'createTime': FieldValue.serverTimestamp(),
-                      'updateTime': FieldValue.serverTimestamp()
-                    });
+                      await FirebaseFirestore.instance
+                          .collection('users') // コレクションID指定
+                          .doc(uid) // ドキュメントID自動生成
+                          .set({
+                        'name': 'John',
+                        'createTime': FieldValue.serverTimestamp(),
+                        'updateTime': FieldValue.serverTimestamp()
+                      });
 
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(
-                      builder: (_) => ChatPage(result.user!),
-                    ));
-                  } catch (e) {
-                    await showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text('エラー'),
-                            content: Text(e.toString()),
-                          );
-                        });
-                  }
-                },
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (_) => ChatPage(result.user!),
+                      ));
+                    } catch (e) {
+                      await showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('エラー'),
+                              content: Text(e.toString()),
+                            );
+                          });
+                    }
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      // ),
     );
   }
 }
@@ -584,126 +586,6 @@ class GetDocUseStream extends StatelessWidget {
   }
 }
 
-class getImageFromGarally5 extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final uid = auth.currentUser?.uid.toString();
-    return StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users') // コレクションID指定
-            .doc(uid)
-            .collection('followUsers')
-            .snapshots(),
-        builder: (context, snapshot) {
-          final messages = snapshot.data!.docs;
-          List<String> messageText = [];
-          for (var message in messages) {
-            final messageText = message['id'];
-          }
-          return Container(child: Text(messageText as String));
-        });
-  }
-}
-
-void task1() => print("task 1 complete");
-void task3() => print("task 3 complete");
-
-class task2 extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final uid = auth.currentUser?.uid.toString();
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('followUsers')
-          .snapshots(),
-      builder: (context, snapshot) {
-        final messages = snapshot.data!.docs;
-        List<String> datas = [];
-        for (var message in messages) {
-          datas.add(message['id']);
-          print(messages);
-        }
-        return Center(
-            child: Column(
-          children: [
-            Expanded(
-                child: CustomScrollView(
-              slivers: <Widget>[
-                SliverAppBar(
-                  pinned: true,
-                  expandedHeight: 200,
-                  flexibleSpace: Image.network(
-                      'https://kankokuryugakuguide.com/wp/wp-content/uploads/2020/03/globe-trotter-1828079_1920-860x573.jpg',
-                      fit: BoxFit.cover),
-                  bottom: PreferredSize(
-                    child: Text(''),
-                    preferredSize: Size.fromHeight(60),
-                  ), // これが minHeight の役割をする感じ
-                ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                      (BuildContext context, int index) {
-                    return Container(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('Row_$index'));
-                  }),
-                )
-              ],
-            )),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                // 投稿メッセージ一覧を取得（非同期処理）
-                // 投稿日時でソート
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(datas[1])
-                    .collection('post')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  // データが取得できた場合
-                  if (snapshot.hasData) {
-                    final List<DocumentSnapshot> documents =
-                        snapshot.data!.docs;
-                    return ListView(
-                      children: documents.map((document) {
-                        return Card(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.max,
-                            children: <Widget>[
-                              ListTile(
-                                title: Text(document['text']),
-                              ),
-                              Container(
-                                  child: Image.network(
-                                document['imageUrl'],
-                                fit: BoxFit.contain,
-                              )),
-                              ListTile(title: Text(document['email'])),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  }
-                  // データが読込中の場合
-                  return const Center(
-                    child: Text('読込中...'),
-                  );
-                },
-              ),
-            ),
-          ],
-          // )
-        ));
-      },
-    );
-  }
-}
-
 // チャット画面用Widget
 class ChatPage extends StatelessWidget {
 // 引数からユーザー情報を受け取れるようにする
@@ -718,9 +600,7 @@ class ChatPage extends StatelessWidget {
 
     final imagePicker = ImagePicker();
 
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final uid = auth.currentUser?.uid.toString();
-
+// ギャラリーから画像を取得するメソッド
     Future getImageFromGarally1() async {
       final pickerFile =
           await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -742,52 +622,169 @@ class ChatPage extends StatelessWidget {
     }
 
     return Scaffold(
-        // appBar: AppBar(
-        //   title: const Text('GALLERY'),
-        //   actions: <Widget>[
-        //     IconButton(
-        //       icon: const Icon(Icons.logout),
-        //       onPressed: () async {
-        //         // ログアウト処理
-        //         // 内部で保持しているログイン情報等が初期化される
-        //         // （現時点ではログアウト時はこの処理を呼び出せばOKと、思うぐらいで大丈夫です）
-        //         await FirebaseAuth.instance.signOut();
-        //         // ログイン画面に遷移＋チャット画面を破棄
-        //         await Navigator.of(context).pushReplacement(
-        //           MaterialPageRoute(builder: (context) {
-        //             return LoginPage();
-        //           }),
-        //         );
-        //       },
-        //     ),
-        //   ],
-        // ),
-        body: task2(),
-        bottomNavigationBar: BottomNavigationBar(
-          unselectedItemColor: const Color.fromARGB(255, 255, 255, 255),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home, color: Colors.white),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.business, color: Colors.white),
-              label: 'Business',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.school, color: Colors.white),
-              label: 'School',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings, color: Colors.white),
-              label: 'Settings',
-            ),
-          ],
-          //  currentIndex: _selectedIndex,
-          //  selectedItemColor: Colors.amber[800],
-          //  onTap: _onItemTapped,
-        ),
-        floatingActionButton: Column(mainAxisSize: MainAxisSize.min, children: [
+      appBar: AppBar(
+        title: const Text('GALLERY'),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              // ログアウト処理
+              // 内部で保持しているログイン情報等が初期化される
+              // （現時点ではログアウト時はこの処理を呼び出せばOKと、思うぐらいで大丈夫です）
+              await FirebaseAuth.instance.signOut();
+              // ログイン画面に遷移＋チャット画面を破棄
+              await Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) {
+                  return LoginPage();
+                }),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Center(
+          child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 414),
+              child: Column(
+                children: [
+                  // Container(
+                  //   padding: EdgeInsets.all(8),
+                  //   child: Text('ログイン情報：${user.email}'),
+                  // ),
+                  Expanded(
+                    // FutureBuilder
+                    // 非同期処理の結果を元にWidgetを作れる
+                    child: StreamBuilder<QuerySnapshot>(
+                      // 投稿メッセージ一覧を取得（非同期処理）
+                      // 投稿日時でソート
+                      stream: FirebaseFirestore.instance
+                          .collectionGroup('post')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        // データが取得できた場合
+                        if (snapshot.hasData) {
+                          final List<DocumentSnapshot> documents =
+                              snapshot.data!.docs;
+                          // 取得した投稿メッセージ一覧を元にリスト表示
+                          return ListView(
+                            children: documents.map((document) {
+                              return Card(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: <Widget>[
+                                    ListTile(
+                                      title: Text(document['text']),
+                                      // 自分の投稿メッセージの場合は削除ボタンを表示
+                                      trailing: document['email'] == user.email
+                                          ? IconButton(
+                                              icon: const Icon(Icons.delete),
+                                              onPressed: () async {
+                                                final FirebaseAuth auth =
+                                                    FirebaseAuth.instance;
+                                                final uid = auth
+                                                    .currentUser?.uid
+                                                    .toString();
+                                                // 投稿メッセージのドキュメントを削除
+                                                await FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(uid)
+                                                    .collection('post')
+                                                    .doc(document.id)
+                                                    .delete();
+                                              },
+                                            )
+                                          : IconButton(
+                                              icon: const Icon(
+                                                  Icons.eight_k_plus),
+                                              onPressed: () async {
+                                                final FirebaseAuth auth =
+                                                    FirebaseAuth.instance;
+                                                final uid = auth
+                                                    .currentUser?.uid
+                                                    .toString();
+                                                final userRef =
+                                                    FirebaseFirestore.instance
+                                                        .collection('users')
+                                                        .doc(uid);
+                                                var followedUserRef =
+                                                    document['author']
+                                                        .replaceAll(
+                                                            "users/", "");
+                                                await FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(uid)
+                                                    .collection('followUsers')
+                                                    .doc(followedUserRef)
+                                                    .set({
+                                                  'id': followedUserRef,
+                                                  'userRef': document['author'],
+                                                  'createTime': FieldValue
+                                                      .serverTimestamp()
+                                                });
+                                                await FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(followedUserRef)
+                                                    .collection('followedUsers')
+                                                    .doc(uid)
+                                                    .set({
+                                                  'id': uid,
+                                                  'userRef': userRef.path,
+                                                  'createTime': FieldValue
+                                                      .serverTimestamp()
+                                                });
+                                              },
+                                            ),
+                                    ),
+                                    Container(
+                                        // width: 154,
+                                        // height: 230,
+                                        child: Image.network(
+                                      document['imageUrl'],
+                                      fit: BoxFit.contain,
+                                    )),
+                                    ListTile(title: Text(document['email'])),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }
+                        // データが読込中の場合
+                        return const Center(
+                          child: Text('読込中...'),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ))),
+      bottomNavigationBar: BottomNavigationBar(
+        unselectedItemColor: const Color.fromARGB(255, 255, 255, 255),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.white),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.business, color: Colors.white),
+            label: 'Business',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school, color: Colors.white),
+            label: 'School',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings, color: Colors.white),
+            label: 'Settings',
+          ),
+        ],
+        //  currentIndex: _selectedIndex,
+        //  selectedItemColor: Colors.amber[800],
+        //  onTap: _onItemTapped,
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
           FloatingActionButton(
               backgroundColor: Colors.grey,
               onPressed: () async {
@@ -844,7 +841,9 @@ class ChatPage extends StatelessWidget {
               backgroundColor: Colors.grey,
               onPressed: getImageFromGarally1,
               child: const Icon(Icons.photo_camera))
-        ]));
+        ],
+      ),
+    );
   }
 }
 
@@ -857,52 +856,53 @@ class GetDocUseStream1 extends StatelessWidget {
 
     return Scaffold(
         body: Center(
-            // child: ConstrainedBox(
-            //     constraints: const BoxConstraints(maxWidth: 414),
-            child: Column(
-      children: [
-        Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            // 投稿メッセージ一覧を取得（非同期処理）
-            // 投稿日時でソート
-            stream:
-                FirebaseFirestore.instance.collectionGroup('post').snapshots(),
-            builder: (context, snapshot) {
-              // データが取得できた場合
-              if (snapshot.hasData) {
-                final List<DocumentSnapshot> documents = snapshot.data!.docs;
-                // 取得した投稿メッセージ一覧を元にリスト表示
-                return ListView(
-                  children: documents.map((document) {
-                    return Card(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        children: <Widget>[
-                          ListTile(
-                            title: Text(document['text']),
-                          ),
-                          Container(
-                              child: Image.network(
-                            document['imageUrl'],
-                            fit: BoxFit.contain,
-                          )),
-                          ListTile(title: Text(document['email'])),
-                        ],
+            child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 414),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: StreamBuilder<QuerySnapshot>(
+                        // 投稿メッセージ一覧を取得（非同期処理）
+                        // 投稿日時でソート
+                        stream: FirebaseFirestore.instance
+                            .collectionGroup('post')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          // データが取得できた場合
+                          if (snapshot.hasData) {
+                            final List<DocumentSnapshot> documents =
+                                snapshot.data!.docs;
+                            // 取得した投稿メッセージ一覧を元にリスト表示
+                            return ListView(
+                              children: documents.map((document) {
+                                return Card(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: <Widget>[
+                                      ListTile(
+                                        title: Text(document['text']),
+                                      ),
+                                      Container(
+                                          child: Image.network(
+                                        document['imageUrl'],
+                                        fit: BoxFit.contain,
+                                      )),
+                                      ListTile(title: Text(document['email'])),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          }
+                          // データが読込中の場合
+                          return const Center(
+                            child: Text('読込中...'),
+                          );
+                        },
                       ),
-                    );
-                  }).toList(),
-                );
-              }
-              // データが読込中の場合
-              return const Center(
-                child: Text('読込中...'),
-              );
-            },
-          ),
-        ),
-      ],
-      // )
-    )));
+                    ),
+                  ],
+                ))));
   }
 }
 
@@ -1124,102 +1124,104 @@ class _AddPostPageState extends State<AddPostPage> {
           title: const Text('新規投稿'),
         ),
         body: Center(
-          // child: ConstrainedBox(
-          //   constraints: const BoxConstraints(maxWidth: 414),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Container(
-                width: double.infinity,
-                child: _image == null
-                    ? Text(
-                        '写真を選択してください',
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 414),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  width: double.infinity,
+                  child: _image == null
+                      ? Text(
+                          '写真を選択してください',
 // ignore: deprecated_member_use
-                        style: Theme.of(context).textTheme.headline4,
-                      )
-                    : Container(
-                        alignment: Alignment.center,
-                        height: 150,
-                        child: Image.network(
-                          '${_image!.path}',
-                          fit: BoxFit.contain,
-                        )),
-              ),
-              const SizedBox(height: 8),
+                          style: Theme.of(context).textTheme.headline4,
+                        )
+                      : Container(
+                          alignment: Alignment.center,
+                          height: 150,
+                          child: Image.network(
+                            '${_image!.path}',
+                            fit: BoxFit.contain,
+                          )),
+                ),
+                const SizedBox(height: 8),
 // 投稿メッセージ入力
-              TextFormField(
-                decoration: const InputDecoration(labelText: '投稿文を書く'),
+                TextFormField(
+                  decoration: const InputDecoration(labelText: '投稿文を書く'),
 // 複数行のテキスト入力
-                keyboardType: TextInputType.multiline,
+                  keyboardType: TextInputType.multiline,
 // 最大3行
-                maxLines: 3,
-                onChanged: (String value) {
-                  setState(() {
-                    messageText = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                      child: const Text(
-                    'お試し投稿',
-// ignore: deprecated_member_use
-// style: Theme.of(context).textTheme.headline4,
-                  )),
-                  Switch(
-                    value: isOn,
-                    onChanged: (bool? value) {
-                      if (value != null) {
-                        setState(() {
-                          isOn = value;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 38),
-              Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.grey)),
-                  child: const Text('シェア'),
-                  onPressed: () async {
-                    final date =
-                        DateTime.now().toLocal().toIso8601String(); // 現在の日時
-                    final email = widget.user.email; // AddPostPage のデータを参
-
-                    final FirebaseAuth auth = FirebaseAuth.instance;
-                    final uid = auth.currentUser?.uid.toString();
-                    final userRef =
-                        FirebaseFirestore.instance.collection('users').doc(uid);
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(uid)
-                        .collection('post')
-                        .doc()
-                        .set({
-                      'text': messageText,
-                      'email': email,
-                      'author': userRef.path,
-                      'createTime': date,
-                      'updateTime': FieldValue.serverTimestamp(),
-                      'imageUrl': url,
-                      'trial': isOn
+                  maxLines: 3,
+                  onChanged: (String value) {
+                    setState(() {
+                      messageText = value;
                     });
-
-                    // 1つ前の画面に戻る
-                    Navigator.of(context).pop();
                   },
                 ),
-              )
-            ],
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Container(
+                        child: const Text(
+                      'お試し投稿',
+// ignore: deprecated_member_use
+// style: Theme.of(context).textTheme.headline4,
+                    )),
+                    Switch(
+                      value: isOn,
+                      onChanged: (bool? value) {
+                        if (value != null) {
+                          setState(() {
+                            isOn = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 38),
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all(Colors.grey)),
+                    child: const Text('シェア'),
+                    onPressed: () async {
+                      final date =
+                          DateTime.now().toLocal().toIso8601String(); // 現在の日時
+                      final email = widget.user.email; // AddPostPage のデータを参
+
+                      final FirebaseAuth auth = FirebaseAuth.instance;
+                      final uid = auth.currentUser?.uid.toString();
+                      final userRef = FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid);
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid)
+                          .collection('post')
+                          .doc()
+                          .set({
+                        'text': messageText,
+                        'email': email,
+                        'author': userRef.path,
+                        'createTime': date,
+                        'updateTime': FieldValue.serverTimestamp(),
+                        'imageUrl': url,
+                        'trial': isOn
+                      });
+
+                      // 1つ前の画面に戻る
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                )
+              ],
+            ),
           ),
-          // ),
         ),
         floatingActionButton:
             Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
