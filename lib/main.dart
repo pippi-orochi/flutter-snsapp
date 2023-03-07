@@ -634,27 +634,15 @@ class task2 extends StatelessWidget {
                 child: CustomScrollView(
               slivers: <Widget>[
                 SliverAppBar(
-                  pinned: true,
-                  expandedHeight: 200,
+                  expandedHeight: 100,
                   flexibleSpace: Image.network(
                       'https://kankokuryugakuguide.com/wp/wp-content/uploads/2020/03/globe-trotter-1828079_1920-860x573.jpg',
                       fit: BoxFit.cover),
-                  bottom: PreferredSize(
-                    child: Text(''),
-                    preferredSize: Size.fromHeight(60),
-                  ), // これが minHeight の役割をする感じ
                 ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                      (BuildContext context, int index) {
-                    return Container(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('Row_$index'));
-                  }),
-                )
-              ],
-            )),
-            Expanded(
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 // 投稿メッセージ一覧を取得（非同期処理）
                 // 投稿日時でソート
@@ -696,12 +684,77 @@ class task2 extends StatelessWidget {
                 },
               ),
             ),
+                ],
+              ),
+            ),
+              ],
+            )),
+            // Expanded(
+            //   child: StreamBuilder<QuerySnapshot>(
+            //     // 投稿メッセージ一覧を取得（非同期処理）
+            //     // 投稿日時でソート
+            //     stream: FirebaseFirestore.instance
+            //         .collection('users')
+            //         .doc(datas[1])
+            //         .collection('post')
+            //         .snapshots(),
+            //     builder: (context, snapshot) {
+            //       // データが取得できた場合
+            //       if (snapshot.hasData) {
+            //         final List<DocumentSnapshot> documents =
+            //             snapshot.data!.docs;
+            //         return ListView(
+            //           children: documents.map((document) {
+            //             return Card(
+            //               child: Column(
+            //                 mainAxisSize: MainAxisSize.max,
+            //                 children: <Widget>[
+            //                   ListTile(
+            //                     title: Text(document['text']),
+            //                   ),
+            //                   Container(
+            //                       child: Image.network(
+            //                     document['imageUrl'],
+            //                     fit: BoxFit.contain,
+            //                   )),
+            //                   ListTile(title: Text(document['email'])),
+            //                 ],
+            //               ),
+            //             );
+            //           }).toList(),
+            //         );
+            //       }
+            //       // データが読込中の場合
+            //       return const Center(
+            //         child: Text('読込中...'),
+            //       );
+            //     },
+            //   ),
+            // ),
           ],
           // )
         ));
       },
     );
   }
+}
+
+Widget myContainer({double size = 300, required Color color, String text = ''}) {
+  return Container(
+    color: color,
+    width: size,
+    height: size,
+    child: Center(
+      child: Text(
+        text,
+        style: TextStyle(
+            fontSize: 48,
+            fontWeight: FontWeight.bold,
+            color: Colors.white
+        ),
+      ),
+    ),
+  );
 }
 
 // チャット画面用Widget
@@ -741,110 +794,82 @@ class ChatPage extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-        // appBar: AppBar(
-        //   title: const Text('GALLERY'),
-        //   actions: <Widget>[
-        //     IconButton(
-        //       icon: const Icon(Icons.logout),
-        //       onPressed: () async {
-        //         // ログアウト処理
-        //         // 内部で保持しているログイン情報等が初期化される
-        //         // （現時点ではログアウト時はこの処理を呼び出せばOKと、思うぐらいで大丈夫です）
-        //         await FirebaseAuth.instance.signOut();
-        //         // ログイン画面に遷移＋チャット画面を破棄
-        //         await Navigator.of(context).pushReplacement(
-        //           MaterialPageRoute(builder: (context) {
-        //             return LoginPage();
-        //           }),
-        //         );
-        //       },
-        //     ),
-        //   ],
-        // ),
-        body: task2(),
-        bottomNavigationBar: BottomNavigationBar(
-          unselectedItemColor: const Color.fromARGB(255, 255, 255, 255),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home, color: Colors.white),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.business, color: Colors.white),
-              label: 'Business',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.school, color: Colors.white),
-              label: 'School',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings, color: Colors.white),
-              label: 'Settings',
-            ),
-          ],
-          //  currentIndex: _selectedIndex,
-          //  selectedItemColor: Colors.amber[800],
-          //  onTap: _onItemTapped,
-        ),
-        floatingActionButton: Column(mainAxisSize: MainAxisSize.min, children: [
-          FloatingActionButton(
-              backgroundColor: Colors.grey,
-              onPressed: () async {
-                // 投稿画面に遷移
-                await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) {
-                    return MyStaggeredGridViewScreen1(user);
-                  }),
-                );
-              }),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisSize: MainAxisSize.min,
+        return Scaffold(
+      body: CustomScrollView(
+        slivers: <Widget>[
+          SliverAppBar(
+            flexibleSpace: FlexibleSpaceBar(
+              title: SingleChildScrollView( // SingleChildScrollViewで子ウィジェットをラップ
+          scrollDirection: Axis.horizontal, // スクロールの向きを水平方向に指定
+          child: Row(
             children: [
-              FloatingActionButton(
-                backgroundColor: Colors.grey,
-                onPressed: () async {
-                  // 投稿画面に遷移
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) {
-                      return AddPostPage(user, _image!, url);
-                    }),
-                  );
-                },
-              ),
-              const SizedBox(width: 20),
-              FloatingActionButton(
-                backgroundColor: Colors.grey,
-                onPressed: () async {
-                  // 投稿画面に遷移
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) {
-                      return AddPostPage1(user);
-                    }),
-                  );
-                },
-              ),
-              const SizedBox(width: 20),
-              FloatingActionButton(
-                backgroundColor: Colors.grey,
-                onPressed: () async {
-                  // 投稿画面に遷移
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) {
-                      return MyStaggeredGridViewScreen(user);
-                    }),
-                  );
-                },
-              ),
+              myContainer(color: Colors.blue, text: 'START'),
+              myContainer(color: Colors.orange),
+              myContainer(color: Colors.red),
+              myContainer(color: Colors.blue),
+              myContainer(color: Colors.orange),
+              myContainer(color: Colors.red, text: 'END'),
             ],
           ),
-          const SizedBox(height: 20),
-          FloatingActionButton(
-              backgroundColor: Colors.grey,
-              onPressed: getImageFromGarally1,
-              child: const Icon(Icons.photo_camera))
-        ]));
+        ),
+            ),
+            expandedHeight: 300,
+            backgroundColor: Colors.transparent,
+          ),
+          SliverList(
+  delegate: SliverChildListDelegate(
+    [ Row( 
+  children:[
+    Expanded(
+                                child:
+              StreamBuilder<QuerySnapshot>(
+                // 投稿メッセージ一覧を取得（非同期処理）
+                // 投稿日時でソート
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc('5wHiexbowpXHlwKKDVxTCRBbwYu1')
+                    .collection('post')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  // データが取得できた場合
+                  if (snapshot.hasData) {
+                    final List<DocumentSnapshot> documents =
+                        snapshot.data!.docs;
+                    return ListView(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                      children: documents.map((document) {
+                        return Card(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            children: <Widget>[
+                              ListTile(
+                                title: Text(document['text']),
+                              ),
+                              Container(
+                                  child: Image.network(
+                                document['imageUrl'],
+                                fit: BoxFit.contain,
+                              )),
+                              ListTile(title: Text(document['email'])),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  }
+                  // データが読込中の場合
+                  return const Center(
+                    child: Text('読込中...'),
+                  );
+                },
+              ),)
+              ]
+              )]
+              
+              )
+              
+              )]));
   }
 }
 
