@@ -609,6 +609,7 @@ class getImageFromGarally5 extends StatelessWidget {
 void task1() => print("task 1 complete");
 void task3() => print("task 3 complete");
 
+
 class task2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -763,9 +764,59 @@ class ChatPage extends StatelessWidget {
   ChatPage(this.user);
 // ユーザー情報
   final User user;
+  
+  Future<String> asyncFunc(String name, int time) async {
+    
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      final uid = auth.currentUser?.uid.toString();
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('followUsers').doc('lUyIHh3jQiUEgasPn7sLDYqBjCP2').get();
+      final ref1 = doc.data();
+      final ref2 = ref1!['id'];
+    return Future.delayed(Duration(seconds: time), () {
+      final FirebaseAuth auth = FirebaseAuth.instance;
+      final uid = auth.currentUser?.uid.toString();
+      final snapshot = FirebaseFirestore.instance.collection('post').get();
+
+      final list = snapshot;
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(uid);
+      return ref2;
+    });
+  }  
+
+void asynctest4() async {
+  print("method begin");
+  print(DateTime.now().toString());
+  print("data1 start");
+  print(await asyncFunc("data1", 3));
+  print("data2 start");
+  print(await asyncFunc("data2", 2));
+  print("data3 start");
+  print(await asyncFunc("data3", 1));
+  print("data4 start");
+  print(asyncFunc1(await asyncFunc("data4", 4)));
+}
+
+Future<String> asyncFunc1(String name) async {    
+  final followData = [];
+  FirebaseFirestore.instance.collection('users').doc(name).collection('post').get().then((QuerySnapshot snapshot) {
+   snapshot.docs.forEach((doc) {
+     /// usersコレクションのドキュメントIDを取得する
+    //  print(doc.id);
+     /// 取得したドキュメントIDのフィールド値nameの値を取得する
+    //  print(doc.get('email'));
+     followData.add(doc.id);
+   }
+   );
+});
+   return followData[1]['id'];
+  }
+  
+  
 
   @override
   Widget build(BuildContext context) {
+    asynctest4();
     String url = '';
     XFile? _image;
 
@@ -795,39 +846,23 @@ class ChatPage extends StatelessWidget {
     }
 
         return Scaffold(
-      body: CustomScrollView(
+                body: 
+                  CustomScrollView(
         slivers: <Widget>[
-          SliverAppBar(
-            flexibleSpace: FlexibleSpaceBar(
-              title: SingleChildScrollView( // SingleChildScrollViewで子ウィジェットをラップ
-          scrollDirection: Axis.horizontal, // スクロールの向きを水平方向に指定
-          child: Row(
-            children: [
-              myContainer(color: Colors.blue, text: 'START'),
-              myContainer(color: Colors.orange),
-              myContainer(color: Colors.red),
-              myContainer(color: Colors.blue),
-              myContainer(color: Colors.orange),
-              myContainer(color: Colors.red, text: 'END'),
-            ],
-          ),
-        ),
-            ),
-            expandedHeight: 300,
-            backgroundColor: Colors.transparent,
-          ),
           SliverList(
   delegate: SliverChildListDelegate(
     [ Row( 
   children:[
     Expanded(
-                                child:
-              StreamBuilder<QuerySnapshot>(
+        child: FutureBuilder(
+          future: asyncFunc("data4", 0),
+          
+          builder: (BuildContext context, AsyncSnapshot<String> snapshot) => StreamBuilder<QuerySnapshot>(
                 // 投稿メッセージ一覧を取得（非同期処理）
                 // 投稿日時でソート
                 stream: FirebaseFirestore.instance
                     .collection('users')
-                    .doc('5wHiexbowpXHlwKKDVxTCRBbwYu1')
+                    .doc(snapshot.data!)
                     .collection('post')
                     .snapshots(),
                 builder: (context, snapshot) {
@@ -863,13 +898,87 @@ class ChatPage extends StatelessWidget {
                     child: Text('読込中...'),
                   );
                 },
-              ),)
-              ]
-              )]
+              ),
+        ),
+      ),]
+    )]))]));
+
+
+      // body: CustomScrollView(
+      //   slivers: <Widget>[
+  //         SliverAppBar(
+  //           flexibleSpace: FlexibleSpaceBar(
+  //             title: SingleChildScrollView( // SingleChildScrollViewで子ウィジェットをラップ
+  //         scrollDirection: Axis.horizontal, // スクロールの向きを水平方向に指定
+  //         child: Row(
+  //           children: [
+  //             myContainer(color: Colors.blue, text: 'START'),
+  //             myContainer(color: Colors.orange),
+  //             myContainer(color: Colors.red),
+  //             myContainer(color: Colors.blue),
+  //             myContainer(color: Colors.orange),
+  //             myContainer(color: Colors.red, text: 'END'),
+  //           ],
+  //         ),
+  //       ),
+  //           ),
+  //           expandedHeight: 300,
+  //           backgroundColor: Colors.transparent,
+  //         ),
+  //         SliverList(
+  // delegate: SliverChildListDelegate(
+  //   [ Row( 
+  // children:[
+  //   Expanded(
+  //                               child:
+              // StreamBuilder<QuerySnapshot>(
+              //   // 投稿メッセージ一覧を取得（非同期処理）
+              //   // 投稿日時でソート
+              //   stream: FirebaseFirestore.instance
+              //       .collection('users')
+              //       .doc(await asyncFunc("data4", 4))
+              //       .collection('post')
+              //       .snapshots(),
+              //   builder: (context, snapshot) {
+              //     // データが取得できた場合
+              //     if (snapshot.hasData) {
+              //       final List<DocumentSnapshot> documents =
+              //           snapshot.data!.docs;
+              //       return ListView(
+              //   shrinkWrap: true,
+              //   physics: NeverScrollableScrollPhysics(),
+              //         children: documents.map((document) {
+              //           return Card(
+              //             child: Column(
+              //               mainAxisSize: MainAxisSize.max,
+              //               children: <Widget>[
+              //                 ListTile(
+              //                   title: Text(document['text']),
+              //                 ),
+              //                 Container(
+              //                     child: Image.network(
+              //                   document['imageUrl'],
+              //                   fit: BoxFit.contain,
+              //                 )),
+              //                 ListTile(title: Text(document['email'])),
+              //               ],
+              //             ),
+              //           );
+              //         }).toList(),
+              //       );
+              //     }
+              //     // データが読込中の場合
+              //     return const Center(
+              //       child: Text('読込中...'),
+              //     );
+              //   },
+              // ),)
+  //             ]
+  //             )]
               
-              )
+  //             )
               
-              )]));
+  //             )]));
   }
 }
 
